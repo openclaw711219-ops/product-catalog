@@ -59,15 +59,15 @@ async function init() {
 async function fetchSheetData(url) {
   const res = await fetch(url);
   const text = await res.text();
-  const lines = text.split('\n').filter(l => l.trim());
   
-  if (lines.length < 2) return DEMO_DATA;
+  // 正確解析 CSV（處理引號內的換行和逗號）
+  const rows = parseCSV(text);
+  if (rows.length < 2) return DEMO_DATA;
   
-  // 解析 CSV（處理引號內的逗號）
   const products = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cols = parseCSVLine(lines[i]);
-    if (cols.length >= 4) {
+  for (let i = 1; i < rows.length; i++) {
+    const cols = rows[i];
+    if (cols.length >= 4 && cols[0].trim()) {
       products.push({
         name: cols[0].trim(),
         category: cols[1].trim(),
@@ -78,9 +78,59 @@ async function fetchSheetData(url) {
     }
   }
   
-  // 按排序欄位排序
   products.sort((a, b) => (a.sort || 999) - (b.sort || 999));
   return products;
+}
+
+// 完整 CSV 解析器（正確處理引號內的換行）
+function parseCSV(text) {
+  const rows = [];
+  let current = [];
+  let field = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const next = text[i + 1];
+    
+    if (inQuotes) {
+      if (ch === '"' && next === '"') {
+        field += '"';
+        i++;
+      } else if (ch === '"') {
+        inQuotes = false;
+      } else {
+        field += ch;
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ',') {
+        current.push(field);
+        field = '';
+      } else if (ch === '\r' && next === '\n') {
+        current.push(field);
+        field = '';
+        rows.push(current);
+        current = [];
+        i++;
+      } else if (ch === '\n') {
+        current.push(field);
+        field = '';
+        rows.push(current);
+        current = [];
+      } else {
+        field += ch;
+      }
+    }
+  }
+  
+  if (field || current.length > 0) {
+    current.push(field);
+    rows.push(current);
+  }
+  
+  return rows;
 }
 
 // 自動修正 Google Drive 圖片連結
