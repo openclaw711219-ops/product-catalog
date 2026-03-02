@@ -1,4 +1,4 @@
-const CACHE_NAME = 'product-catalog-v2';
+const CACHE_NAME = 'product-catalog-v3';
 const ASSETS = [
   '/',
   '/index.html',
