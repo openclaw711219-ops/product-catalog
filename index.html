@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#f8f0e8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="產品型錄">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>產品型錄</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 頂部搜尋欄 -->
+  <header class="header">
+    <h1 class="header-title">產品型錄</h1>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="🔍 搜尋產品..." autocomplete="off">
+      <button id="clearSearch" class="clear-btn" style="display:none;">✕</button>
+    </div>
+  </header>
+
+  <!-- 分類選單 -->
+  <nav class="category-nav">
+    <button class="cat-btn active" data-category="all">全部</button>
+    <!-- 分類按鈕由 JS 動態產生 -->
+  </nav>
+
+  <!-- 產品數量 -->
+  <div class="result-info" id="resultInfo"></div>
+
+  <!-- 產品列表 -->
+  <main class="product-grid" id="productGrid">
+    <div class="loading" id="loading">載入中...</div>
+  </main>
+
+  <!-- 產品詳情彈窗 -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <button class="modal-close" id="modalClose">✕</button>
+      <img class="modal-img" id="modalImg" src="" alt="">
+      <h2 class="modal-title" id="modalTitle"></h2>
+      <div class="modal-category" id="modalCategory"></div>
+      <p class="modal-desc" id="modalDesc"></p>
+    </div>
+  </div>
+
+  <!-- 回到頂部 -->
+  <button class="back-to-top" id="backToTop">↑</button>
+
+  <script src="app.js"></script>
+</body>
+</html>
