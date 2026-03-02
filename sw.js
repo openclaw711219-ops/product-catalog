@@ -1,10 +1,10 @@
-const CACHE_NAME = 'product-catalog-v3';
+const CACHE_NAME = 'product-catalog-v4';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/app.js',
-  '/manifest.json'
+  './',
+  './index.html',
+  './style.css',
+  './app.js',
+  './manifest.json'
 ];
 
 // 安裝
