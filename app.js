@@ -16,6 +16,11 @@ const DEMO_DATA = [
   { name: '香氛擴香瓶', category: '生活用品', image: '', desc: '天然植物精油，持久淡雅香氣。玻璃瓶身，附擴香竹。適合擺放客廳、臥室、浴室。\n\n容量：120ml\n香味：白茶、薰衣草、柑橘' },
 ];
 
+// ===== 快取設定 =====
+const CACHE_KEY = 'product_catalog_data';
+const CACHE_TIME_KEY = 'product_catalog_time';
+const CACHE_MAX_AGE = 10 * 60 * 1000; // 10 分鐘內用快取，超過就背景更新
+
 // ===== 全域變數 =====
 let allProducts = [];
 let currentCategory = 'all';
@@ -25,13 +30,23 @@ let currentSearch = '';
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
-  // 載入資料
+  // 載入資料（優先用快取）
   if (SHEET_CSV_URL) {
-    try {
-      allProducts = await fetchSheetData(SHEET_CSV_URL);
-    } catch (e) {
-      console.error('Google Sheets 載入失敗，使用示範資料', e);
-      allProducts = DEMO_DATA;
+    const cached = loadFromCache();
+    if (cached) {
+      // 有快取 → 先用快取顯示，背景更新
+      allProducts = cached;
+      console.log('📦 使用本地快取資料，背景更新中...');
+      refreshInBackground();
+    } else {
+      // 沒快取 → 正常載入
+      try {
+        allProducts = await fetchSheetData(SHEET_CSV_URL);
+        saveToCache(allProducts);
+      } catch (e) {
+        console.error('Google Sheets 載入失敗，使用示範資料', e);
+        allProducts = DEMO_DATA;
+      }
     }
   } else {
     allProducts = DEMO_DATA;
@@ -52,6 +67,42 @@ async function init() {
   // 註冊 Service Worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+}
+
+// ===== 快取功能 =====
+function saveToCache(products) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(products));
+    localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+  } catch (e) {
+    console.warn('快取儲存失敗', e);
+  }
+}
+
+function loadFromCache() {
+  try {
+    const data = localStorage.getItem(CACHE_KEY);
+    if (!data) return null;
+    return JSON.parse(data);
+  } catch (e) {
+    return null;
+  }
+}
+
+async function refreshInBackground() {
+  try {
+    const freshData = await fetchSheetData(SHEET_CSV_URL);
+    saveToCache(freshData);
+    // 如果資料有變動，更新畫面
+    if (JSON.stringify(freshData) !== JSON.stringify(allProducts)) {
+      allProducts = freshData;
+      buildCategoryButtons();
+      renderProducts();
+      console.log('✅ 資料已背景更新');
+    }
+  } catch (e) {
+    console.warn('背景更新失敗，繼續使用快取', e);
   }
 }
 
@@ -198,11 +249,17 @@ function parseCSVLine(line) {
 // ===== 建立分類按鈕 =====
 function buildCategoryButtons() {
   const nav = document.querySelector('.category-nav');
+  // 保留「全部」按鈕，移除其他分類按鈕
+  const allBtn = nav.querySelector('.cat-btn[data-category="all"]');
+  nav.innerHTML = '';
+  if (allBtn) nav.appendChild(allBtn);
+  
   const categories = [...new Set(allProducts.map(p => p.category))];
   
   categories.forEach(cat => {
     const btn = document.createElement('button');
     btn.className = 'cat-btn';
+    if (cat === currentCategory) btn.classList.add('active');
     btn.dataset.category = cat;
     btn.textContent = cat;
     nav.appendChild(btn);
