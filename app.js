@@ -30,6 +30,14 @@ let currentSearch = '';
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
+  // 清除舊版快取（圖片連結格式已更新）
+  const CACHE_VER = 'v2';
+  if (localStorage.getItem('cache_ver') !== CACHE_VER) {
+    localStorage.removeItem(CACHE_KEY);
+    localStorage.removeItem(CACHE_TIME_KEY);
+    localStorage.setItem('cache_ver', CACHE_VER);
+  }
+
   // 載入資料（優先用快取）
   if (SHEET_CSV_URL) {
     const cached = loadFromCache();
@@ -215,7 +223,7 @@ function fixImageUrl(url) {
   }
   
   if (fileId) {
-    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
+    return `https://lh3.googleusercontent.com/d/${fileId}=w800`;
   }
   
   return url; // 非 Google Drive 連結，原樣返回
